@@ -19,16 +19,16 @@ public class Square {
         this.occupant = null;
     }
 
-    public void occupy(Piece movingPiece, Piece capturedPiece){
+    public void occupy(Piece[] movingPiece, Piece[] capturedPiece){
         if(!(this.occupant == null)){
-            capturedPiece = this.occupant;
+            capturedPiece[0] = this.occupant;
             this.occupant.captured();
             }
         else{
-            capturedPiece = null;
+            capturedPiece[0] = null;
         }
-        this.occupant = movingPiece;
-        this.unicode = movingPiece.getUnicode();
+        this.occupant = movingPiece[0];
+        this.unicode = movingPiece[0].getUnicode();
     }
 
     public void setOccupant(Piece piece){

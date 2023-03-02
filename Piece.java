@@ -5,7 +5,7 @@ public class Piece {
     private int[] legalMoves;
     private int[] captureMoves; //For pawns
     private String unicode;
-    private boolean hasMoved;
+    private boolean hasMoved; //Checkmate checks break this
 
     public Piece(String type, String color, int position, String unicode){
         this.type = type;
@@ -44,6 +44,10 @@ public class Piece {
         return this.unicode;
     }
 
+    public String toString(){
+        return this.type + " " + this.color;
+    }
+
      public int[] clearArray(int[] array){
         for(int i = 0; i < array.length; i++){
             array[i] = -1;
@@ -59,13 +63,11 @@ public class Piece {
         this.position = toSquare;
      }
 
-    public void move(int fromSquare, int toSquare, Square[] squareArray, Piece movingPiece, Piece capturedPiece){
+    public void move(int fromSquare, int toSquare, Square[] squareArray, Piece[] movingPiece, Piece[] capturedPiece){
         this.hasMoved = true;
         this.position = toSquare;
         squareArray[fromSquare].vacate();
         squareArray[toSquare].occupy(movingPiece, capturedPiece);
-        //this.legalMoves = legalMoves(squareArray);
-        ///captureMoves...
      }
 
 
@@ -80,24 +82,32 @@ public class Piece {
                     int position3 = this.position + 7; // Leftward capture
                     int position4 = this.position + 9; //Rightward capture
 
-                    String squareStatus1 = squareArray[position1].getSquareStatus();
-                    String squareStatus2 = squareArray[position2].getSquareStatus();
-                    String squareStatus3 = squareArray[position3].getSquareStatus();
-                    String squareStatus4 = squareArray[position4].getSquareStatus();
-
-                    if(squareStatus1.equals("open")){ //And no check
-                        this.legalMoves[0] = position1;
+                    if(position1 >= 0 && position1 < 64){
+                        String squareStatus1 = squareArray[position1].getSquareStatus();
+                        if(squareStatus1.equals("open")){ //And no check
+                            this.legalMoves[0] = position1;
+                        }
                     }
-                    if(squareStatus1.equals("open") && squareStatus2.equals("open") && this.position > 7 && this.position < 16){
-                        this.legalMoves[1] = position2;
+                    if(position1 >= 0 && position1 < 64 && position2 >= 0 && position2 < 64){
+                        String squareStatus1 = squareArray[position1].getSquareStatus();
+                        String squareStatus2 = squareArray[position2].getSquareStatus();
+                        if(squareStatus1.equals("open") && squareStatus2.equals("open") && this.position > 7 && this.position < 16){
+                            this.legalMoves[1] = position2;
+                        }
                     }
-                    if(squareStatus3.equals("black") && !(this.position % 8 == 0)){
-                        this.legalMoves[2] = position3;
-                        this.captureMoves[0] = position3;
+                    if(position3 >= 0 && position3 < 64){
+                        String squareStatus3 = squareArray[position3].getSquareStatus();
+                        if(squareStatus3.equals("black") && !(this.position % 8 == 0)){
+                            this.legalMoves[2] = position3;
+                            this.captureMoves[0] = position3;
+                        }
                     }
-                    if(squareStatus4.equals("black") && !((this.position + 1) % 8 == 0)){
-                        this.legalMoves[3] = position4;
-                        this.captureMoves[1] = position4;
+                    if(position4 >= 0 && position4 < 64){
+                        String squareStatus4 = squareArray[position4].getSquareStatus();
+                        if(squareStatus4.equals("black") && !((this.position + 1) % 8 == 0)){
+                            this.legalMoves[3] = position4;
+                            this.captureMoves[1] = position4;
+                        }
                     }
                     return this.legalMoves;
                 }
@@ -107,24 +117,32 @@ public class Piece {
                     int position3 = this.position - 9; // Leftward capture
                     int position4 = this.position - 7; //Rightward capture
 
-                    String squareStatus1 = squareArray[position1].getSquareStatus();
-                    String squareStatus2 = squareArray[position2].getSquareStatus();
-                    String squareStatus3 = squareArray[position3].getSquareStatus();
-                    String squareStatus4 = squareArray[position4].getSquareStatus();
-
-                    if(squareStatus1.equals("open")){ //And no check
-                        this.legalMoves[0] = position1;
+                    if(position1 >= 0 && position1 < 64){
+                        String squareStatus1 = squareArray[position1].getSquareStatus();
+                        if(squareStatus1.equals("open")){ //And no check
+                            this.legalMoves[0] = position1;
+                        }
                     }
-                    if(squareStatus1.equals("open") && squareStatus2.equals("open") && this.position > 47 && this.position < 56){
-                        this.legalMoves[1] = position2;
+                    if(position1 >= 0 && position1 < 64 && position2 >=0 && position2 < 64){
+                        String squareStatus1 = squareArray[position1].getSquareStatus();
+                        String squareStatus2 = squareArray[position2].getSquareStatus();
+                        if(squareStatus1.equals("open") && squareStatus2.equals("open") && this.position > 47 && this.position < 56){
+                            this.legalMoves[1] = position2;
+                        }
                     }
-                    if(squareStatus3.equals("white") && !(this.position % 8 == 0)){
-                        this.legalMoves[2] = position3;
-                        this.captureMoves[0] = position3;
+                    if(position3 >= 0 && position3 < 64){
+                        String squareStatus3 = squareArray[position3].getSquareStatus();
+                        if(squareStatus3.equals("white") && !(this.position % 8 == 0)){
+                            this.legalMoves[2] = position3;
+                            this.captureMoves[0] = position3;
+                        }
                     }
-                    if(squareStatus4.equals("white") && !((this.position + 1) % 8 == 0)){
-                        this.legalMoves[3] = position4;
-                        this.captureMoves[1] = position4;
+                    if(position4 >= 0 && position4 < 64){
+                        String squareStatus4 = squareArray[position4].getSquareStatus();
+                        if(squareStatus4.equals("white") && !((this.position + 1) % 8 == 0)){
+                            this.legalMoves[3] = position4;
+                            this.captureMoves[1] = position4;
+                        }
                     }
                     return this.legalMoves;
                 }

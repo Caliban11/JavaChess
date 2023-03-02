@@ -1,19 +1,24 @@
 import java.util.Scanner;
 import java.util.Random;
 import java.util.Arrays;
-public class Chess {                                //Need to add castling, pawn promotion, en passant, draws/stalemate, computer opponent
-    public static int fromSquareCapture = -1;
-    public static int toSquareCapture = -1;
+
+public class Chess {                                //Need to add castling, pawn promotion, en passant, draws/stalemate, computer opponent, taking chess notation
+    //public static int fromSquareCapture = -1;
+    //public static int toSquareCapture = -1;
+    public static int fromSquare = -1;
+    public static int toSquare = -1;
+
     public static Square[] squareArray;
     public static Piece[] pieceArray;
     public static Piece[] whitePieces;
     public static Piece[] blackPieces;
     public static Piece whiteKing;
     public static Piece blackKing;
-    public static Piece movingPiece[];
-    public static Piece capturedPiece[];
+    public static Piece[] movingPiece = new Piece[1];
+    public static Piece[] capturedPiece = new Piece[1];
+
     public static void main(String[] args){
-        
+
         whitePieces = new Piece[16];
         blackPieces = new Piece[16];
         pieceArray = place();
@@ -21,85 +26,94 @@ public class Chess {                                //Need to add castling, pawn
         whiteKing = pieceArray[30];
         blackKing = pieceArray[31];
 
-        movingPiece = new Piece[1];
-        capturedPiece = new Piece[1];
+        movingPiece[0] = null;
+        capturedPiece[0] = null;
 
+        Scanner input = new Scanner(System.in);
+        boolean valid = false;
+        String select;
+        do{
+            select = "";
+            System.out.print("Play locally [l] or against computer [c]? ");
+            select = input.nextLine();
+            if(select.equals("l") || select.equals("c")){
+                valid = true;
+            }
+            else{
+                System.out.println("Invalid input. Try again.");
+            }
+        }while(valid == false);
 
-            do{
-                printPosition();
-                boolean legal = true;
-                do{
-                System.out.println("White to play.");
-                legal = true;
-                move("white");
-
-                if(isCheckWhite()){
-                    legal = false;
-                    movingPiece[0].place(fromSquareCapture);            //Resetting pieces, square occupants
-
-                    if(!(capturedPiece == null)){
-                    capturedPiece[0].place(toSquareCapture);
-                    }
-
-                    squareArray[fromSquareCapture].setOccupant(movingPiece[0]);
-                    squareArray[toSquareCapture].setOccupant(capturedPiece[0]);
-
-                    System.out.println("Oops! You hung your king. Please try again.");
-                }
-                } while(legal == false);
-                if(isCheckmateBlack() == true){
-                    printPosition();
-                    System.out.println("Checkmate. 1 - 0");
-                    return;
-                }
-
-                //Checkmate/stalemate check
-
-                printPosition();
-                do{
-                System.out.println("Black to play.");
-                legal = true;
-                move("black");
-
-                if(isCheckBlack()){
-                    legal = false;
-                    movingPiece[0].place(fromSquareCapture);
-
-                    if(!(capturedPiece == null)){
-                    capturedPiece[0].place(toSquareCapture);
-                    squareArray[toSquareCapture].setOccupant(capturedPiece[0]);
-                    }
-                    else{
-                        squareArray[toSquareCapture].setOccupant(null);
-                    }
-
-                    squareArray[fromSquareCapture].setOccupant(movingPiece[0]);
-                    
-
-                    System.out.println("Oops! You hung your king. Please try again.");
-                }
-                } while(legal == false);
-                if(isCheckmateWhite() == true){
-                    printPosition();
-                    System.out.println("Checkmate. 0 - 1");
-                    return;
-                }
-
-                //Checkmate/stalemate check
-            } while(true);      //Not checkmate or stalemate?
+        if(select.equals("l")){
+            localGame();
         }
+        else{
+            vsComputer();
+        }
+    }
+
+    public static void vsComputer(){
+
+    }
+
+    public static void localGame(){
+        do{
+            printPosition();
+            boolean legal = true;
+            do{
+            System.out.println("White to play.");
+            legal = true;
+            move("white");
+
+            if(isCheckWhite()){
+                legal = false;
+                rewind(fromSquare, toSquare);
+
+                System.out.println("Oops! You hung your king. Please try again.");
+            }
+            } while(legal == false);
+            if(isCheckmateBlack() == true){
+                printPosition();
+                System.out.println("Checkmate. 1 - 0");
+                return;
+            }
+
+            //Checkmate/stalemate check
+
+            printPosition();
+            do{
+            System.out.println("Black to play.");
+            legal = true;
+            move("black");
+
+            if(isCheckBlack()){
+                legal = false;
+                rewind(fromSquare, toSquare);
+
+                System.out.println("Oops! You hung your king. Please try again.");
+            }
+            } while(legal == false);
+            if(isCheckmateWhite() == true){
+                printPosition();
+                System.out.println("Checkmate. 0 - 1");
+                return;
+            }
+
+            //Checkmate/stalemate check
+        } while(true);      //Not checkmate or stalemate?
+    }
 
     public static void move(String color){
         Scanner input = new Scanner(System.in);
 
         movingPiece[0] = null;
-        int fromSquare = currentPosition(color);
+        fromSquare = currentPosition(color);
 
         //System.out.println(Arrays.toString(movingPiece[0].getLegalMoves(squareArray)));
 
-        int toSquare = intendedPosition(color, fromSquare);
+        toSquare = intendedPosition(color, fromSquare);
 
-        movingPiece[0].move(fromSquare, toSquare, squareArray, movingPiece[0], capturedPiece[0]);
+        movingPiece[0].move(fromSquare, toSquare, squareArray, movingPiece, capturedPiece);
     }
 
     public static boolean isCheckWhite(){
@@ -126,27 +140,18 @@ public class Chess {                                //Need to add castling, pawn
     public static boolean isCheckmateWhite(){
         if(isCheckWhite()){
             for(Piece piece : whitePieces){
-                int fromSquare = piece.getPosition();
+                fromSquare = piece.getPosition();
                 movingPiece[0] = piece;
 
                 for(int move : piece.getLegalMoves(squareArray)){
                     if(!(move == -1)){
-                        piece.move(fromSquare, move, squareArray, movingPiece[0], capturedPiece[0]);
+                        piece.move(fromSquare, move, squareArray, movingPiece, capturedPiece);
 
                         if(isCheckWhite()){
-                            //piece.rewind();
-                            movingPiece[0].place(fromSquare);
-
-                            if(!(capturedPiece[0] == null)){
-                                capturedPiece[0].place(move);
-                                squareArray[move].setOccupant(capturedPiece[0]);
-                            }
-                            else{
-                                squareArray[move].setOccupant(null);
-                            }
-                            squareArray[fromSquare].setOccupant(movingPiece[0]);
+                            rewind(fromSquare, move);
                         }
                         else{
+                            rewind(fromSquare, move);
                             return false;
                         }
                     }
@@ -162,27 +167,19 @@ public class Chess {                                //Need to add castling, pawn
     public static boolean isCheckmateBlack(){
         if(isCheckBlack()){
             for(Piece piece : blackPieces){
-                int fromSquare = piece.getPosition();
+                fromSquare = piece.getPosition();
                 movingPiece[0] = piece;
+                //System.out.println(movingPiece[0]);
 
                 for(int move : piece.getLegalMoves(squareArray)){
                     if(!(move == -1)){
-                        piece.move(fromSquare, move, squareArray, movingPiece[0], capturedPiece[0]);
+                        piece.move(fromSquare, move, squareArray, movingPiece, capturedPiece);
 
                         if(isCheckBlack()){
-                            //piece.rewind();
-                            movingPiece[0].place(fromSquare);
-
-                            if(!(capturedPiece[0] == null)){
-                                capturedPiece[0].place(move);
-                                squareArray[move].setOccupant(capturedPiece[0]);
-                            }
-                            else{
-                                squareArray[move].setOccupant(null);
-                            }
-                            squareArray[fromSquare].setOccupant(movingPiece[0]);
+                           rewind(fromSquare, move);
                         }
                         else{
+                            rewind(fromSquare, move);
                             return false;
                         }
                     }
@@ -193,6 +190,19 @@ public class Chess {                                //Need to add castling, pawn
             return false;
         }
     return true;
+    }
+
+    public static void rewind(int fromSquare, int move){
+        movingPiece[0].place(fromSquare);
+        squareArray[fromSquare].setOccupant(movingPiece[0]);
+
+        if(!(capturedPiece[0] == null)){
+            capturedPiece[0].place(move);
+            squareArray[move].setOccupant(capturedPiece[0]);
+        }
+        else{
+            squareArray[move].setOccupant(null);
+        }
     }
         
     public static void printPosition(){
@@ -211,16 +221,16 @@ public class Chess {                                //Need to add castling, pawn
         Scanner input = new Scanner(System.in);
         String fromSquareString;
         boolean validInput;
-        int fromSquare = -1;
+        int fromSquare1 = -1;
 
         do{
             validInput = true;
             System.out.print("Current position of moving piece: ");
             fromSquareString = input.nextLine();
-            int rankInt = (int)fromSquareString.charAt(1) - 48;
+            //int rankInt = (int)fromSquareString.charAt(1) - 48;
 
             
-            if(fromSquareString.equals(null) || !(fromSquareString.length() == 2) || fileToInt(fromSquareString.charAt(0)) == 0 || rankInt < 1 || rankInt > 8){
+            if(fromSquareString.equals(null) || !(fromSquareString.length() == 2) || fileToInt(fromSquareString.charAt(0)) == 0 || (int)fromSquareString.charAt(1) - 48 < 1 || (int)fromSquareString.charAt(1) - 48 > 8){
                 validInput = false;
                 System.out.println("Incorrect notation. Please try again.");
             }
@@ -230,13 +240,13 @@ public class Chess {                                //Need to add castling, pawn
                 int rankCharConvert = (int)fromSquareString.charAt(1) - 48; //-48 to line up unicode number with integer
                 int rankValue = (rankCharConvert - 1) * 8;
                         
-                fromSquare = fileValue + rankValue;
+                fromSquare1 = fileValue + rankValue;
 
                 validInput = false;
                 if(color.equals("white")){
                     for(Piece piece : whitePieces){
                         int piecePosition = piece.getPosition();
-                        if(piecePosition == fromSquare){
+                        if(piecePosition == fromSquare1){
                             int[] legalMoves = piece.legalMoves(squareArray);
 
                             for(int move : legalMoves){
@@ -252,7 +262,7 @@ public class Chess {                                //Need to add castling, pawn
                 else{
                     for(Piece piece : blackPieces){
                         int piecePosition = piece.getPosition();
-                        if(piecePosition == fromSquare){
+                        if(piecePosition == fromSquare1){
                             int[] legalMoves = piece.legalMoves(squareArray);
 
                             for(int move : legalMoves){
@@ -270,26 +280,25 @@ public class Chess {                                //Need to add castling, pawn
                 }
             }
         } while(!validInput);
-        fromSquareCapture = fromSquare;
-        return fromSquare;
+        return fromSquare1;
     }
 
     public static int intendedPosition(String color, int fromSquare){
         Scanner input = new Scanner(System.in);
         //String toSquareString;
         boolean validInput;
-        int toSquare = -1;
+        int toSquare1 = -1;
 
         do{
             validInput = false;
             System.out.print("Intended position of moving piece: ");
             String toSquareString = input.nextLine();
-            int rankInt = (int)toSquareString.charAt(1) - 48;
+            //int rankInt = (int)toSquareString.charAt(1) - 48;
             //System.out.println(rankInt);
             //System.out.println(toSquareString);
 
 
-            if(toSquareString.equals(null) || !(toSquareString.length() == 2) || (fileToInt(toSquareString.charAt(0)) == 0 || rankInt < 1 || rankInt > 8)){
+            if(toSquareString.equals(null) || !(toSquareString.length() == 2) || (fileToInt(toSquareString.charAt(0)) == 0 || (int)toSquareString.charAt(1) - 48 < 1 || (int)toSquareString.charAt(1) - 48 > 8)){
                 validInput = false;
                 System.out.println("Incorrect notation. Please try again.");
             }
@@ -299,11 +308,11 @@ public class Chess {                                //Need to add castling, pawn
                 int rankCharConvert = (int)toSquareString.charAt(1) - 48; //-48 to line up unicode number with integer
                 int rankValue = (rankCharConvert - 1) * 8;
                             
-                toSquare = fileValue + rankValue;
+                toSquare1 = fileValue + rankValue;
 
 
                 for(int legalMove : movingPiece[0].getLegalMoves(squareArray)){
-                    if(legalMove == toSquare){
+                    if(legalMove == toSquare1){
                         validInput = true;
                         break;
                         }
@@ -315,8 +324,7 @@ public class Chess {                                //Need to add castling, pawn
             }
         }
         while(!validInput);
-        toSquareCapture = toSquare;
-        return toSquare;
+        return toSquare1;
     }
 
 
