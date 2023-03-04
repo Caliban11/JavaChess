@@ -1,32 +1,53 @@
 import java.util.Random;
 public class CPU {
-    public static void CPUmove(String color, Piece[] whitePieces, Square[] squareArray){
-        if(color.equals("white")){
-            do{
-                int cpuPieceValue = 0;
-                for(Piece piece : whitePieces){
-                    cpuPieceValue = pieceValue(piece) - 1;
-                    int captureValue = 0;
-                    for(int move : piece.getLegalMoves(squareArray)){
-                        if(move == -1){
-                            captureValue = -89;
-                        }
-                        if(!(squareArray[move] == null)){
-                            captureValue = pieceValue(squareArray[move].getOccupant());
-                        }
-                        else{
-                            captureValue = cpuPieceValue;
-                        }
-                    }
-                }
-            }while(true);
-        }
-        else{ //For black
-
-        }
+    private Piece[] pieces;
+    private String color;
+    
+    public CPU(String color, Piece[] pieces){ //CPU is still in progress, not functional (Teleports pawns onto your back rank)
+        this.color = color;
+        this.pieces = pieces;
     }
 
-    public static int maxIndex(int[] array){
+    public void CPUmove(Square[] squareArray, Piece[] movingPiece, Piece[] capturedPiece){ //To determine move, CPU will see which move gives it the best net piece value (Assuming if it captures then it's piece will be captured). Currently teleports pawns, also does not have a way of getting out of check yet
+        int cpuPieceValue = 0;
+        int i = 0; int j = 0;
+        int captureValue = 0;
+
+        int[] captureValues = new int[28];
+        int[] bestMoveEvals = new int[16];
+        int[] bestMoves = new int[16];
+        
+        for(Piece piece : this.pieces){
+            cpuPieceValue = pieceValue(piece) - 1;
+
+            for(int move : piece.getLegalMoves(squareArray)){
+                if(move == -1){
+                    captureValue = -89;
+                }
+                else if(!(squareArray[move] == null)){
+                    captureValue = pieceValue(squareArray[move].getOccupant());
+                }
+                else{
+                    captureValue = cpuPieceValue;
+                }
+                captureValues[i] = captureValue;
+                j++;
+            }
+            bestMoveEvals[i] = max(captureValues);
+            bestMoves[i] = maxIndex(captureValues);
+            i++;
+        }
+        Piece selectedPiece = this.pieces[maxIndex(bestMoveEvals)];
+        movingPiece[0] = selectedPiece;
+
+        int selectedMove = bestMoves[maxIndex(bestMoveEvals)];
+
+        selectedPiece.move(selectedPiece.getPosition(), selectedMove, squareArray, movingPiece, capturedPiece);
+
+        System.out.println("I played " + selectedPiece.getType() + " " + selectedMove);
+    }
+
+    public static int maxIndex(int[] array){ //Array function to find index of max value
         int max = array[0];
         int index = 0;
         for(int i = 1; i < array.length; i++){
@@ -38,7 +59,7 @@ public class CPU {
         return index;
     }
 
-    public static int max(int[] array){
+    public static int max(int[] array){ //Array function to find max value
         int max = array[0];
         for(int i = 1; i < array.length; i++){
             if(array[i] > max){
@@ -48,13 +69,15 @@ public class CPU {
         return max;
     }
 
-    public static int pieceValue(Piece piece){
-        switch(piece.getType()){
-            case "pawn": return 1;
-            case "knight": return 3;
-            case "bishop": return 3;
-            case "rook": return 5;
-            case "queen": return 9;
+    public static int pieceValue(Piece piece){ //Setting values of pieces
+        if(piece != null){
+            switch(piece.getType()){
+                case "pawn": return 1;
+                case "knight": return 3;
+                case "bishop": return 3;
+                case "rook": return 5;
+                case "queen": return 9;
+            }
         }
         return 0;
     }

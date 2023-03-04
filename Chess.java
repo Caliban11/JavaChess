@@ -3,36 +3,34 @@ import java.util.Random;
 import java.util.Arrays;
 
 public class Chess {                                //Need to add castling, pawn promotion, en passant, draws/stalemate, computer opponent, taking chess notation
-    //public static int fromSquareCapture = -1;
-    //public static int toSquareCapture = -1;
-    public static int fromSquare = -1;
+    public static int fromSquare = -1;              //Variables to track square being moved from, to
     public static int toSquare = -1;
 
-    public static Square[] squareArray;
+    public static Square[] squareArray;             //Arrays of squares, pieces to be used within methods
     public static Piece[] pieceArray;
     public static Piece[] whitePieces;
     public static Piece[] blackPieces;
-    public static Piece whiteKing;
+    public static Piece whiteKing;                  //Tracking kings for check, checkmate
     public static Piece blackKing;
-    public static Piece[] movingPiece = new Piece[1];
+    public static Piece[] movingPiece = new Piece[1];   //Tracking the piece last moved, piece captured on last move (if applicable, otherwise null)
     public static Piece[] capturedPiece = new Piece[1];
 
     public static void main(String[] args){
 
-        whitePieces = new Piece[16];
+        whitePieces = new Piece[16];                    //Creating piece arrays
         blackPieces = new Piece[16];
-        pieceArray = place();
-        squareArray = createBoard();
-        whiteKing = pieceArray[30];
+        pieceArray = place();                           //place method returns array of all pieces, creates 32 pieces, puts into white and black arrays
+        squareArray = createBoard();                    //Create board creates 64 square objects, returns them in an array
+        whiteKing = pieceArray[30];                     //Tracking kings
         blackKing = pieceArray[31];
 
-        movingPiece[0] = null;
+        movingPiece[0] = null;                          //Tracking moving, captured (if applicable) piece
         capturedPiece[0] = null;
 
         Scanner input = new Scanner(System.in);
         boolean valid = false;
         String select;
-        do{
+        do{                                             //Taking input to determine local or computer game, which color if playing computer
             select = "";
             System.out.print("Play locally [l] or against computer [c]? ");
             select = input.nextLine();
@@ -44,44 +42,108 @@ public class Chess {                                //Need to add castling, pawn
             }
         }while(valid == false);
 
+        String chosenColor = "";
+        if(select.equals("c")){
+            do{
+                valid = false;
+                System.out.print("Play white [w] or black [b]? ");
+                chosenColor = input.nextLine();
+                if(chosenColor.equals("w") || chosenColor.equals("b")){
+                    valid = true;
+                }
+                else{
+                    System.out.println("Invalid input. Try again.");
+                }
+            }while(valid == false);
+        }
+
         if(select.equals("l")){
-            localGame();
+            localGame();    //Method for running a local game
         }
         else{
-            vsComputer();
+            vsComputer(chosenColor);    //Method for running a game against the computer (chosenColor argument gives computer opposite piece array of user's color)
         }
     }
 
-    public static void vsComputer(){
-
+    public static void vsComputer(String chosenColor){  //Still needs stalemate check
+        if(chosenColor.equals("w")){
+           CPU computer = new CPU("black", blackPieces); //Computer object created with opposite piece array of user
+            do{
+                whiteMove(); //User moves first if selected white, looks for checkmate
+                if(isCheckmateBlack() == true){
+                    printPosition();
+                    System.out.println("Checkmate. 1 - 0");
+                    return;
+                }                                    
+                computer.CPUmove(squareArray, movingPiece, capturedPiece);  //CPU moves, looks for checkmate
+                if(isCheckmateWhite() == true){
+                    printPosition();
+                    System.out.println("Checkmate. 0 - 1");
+                    return;
+                }
+            }while(true);
+        }
+        else{
+            CPU computer = new CPU("white", whitePieces);    //Reversed order for CPU playing white
+            do{
+                computer.CPUmove(squareArray, movingPiece, capturedPiece);
+                if(isCheckmateBlack() == true){
+                    printPosition();
+                    System.out.println("Checkmate. 1 - 0");
+                    return;
+                }
+                blackMove();
+                if(isCheckmateWhite() == true){
+                    printPosition();
+                    System.out.println("Checkmate. 0 - 1");
+                    return;
+                }
+            }while(true);
+        }
     }
 
     public static void localGame(){
         do{
-            printPosition();
-            boolean legal = true;
-            do{
-            System.out.println("White to play.");
-            legal = true;
-            move("white");
-
-            if(isCheckWhite()){
-                legal = false;
-                rewind(fromSquare, toSquare);
-
-                System.out.println("Oops! You hung your king. Please try again.");
-            }
-            } while(legal == false);
+            whiteMove();                        //User playing white moves first, checkmate scan
             if(isCheckmateBlack() == true){
                 printPosition();
                 System.out.println("Checkmate. 1 - 0");
                 return;
             }
+            //Stalemate check (Still needs to be implented)
+            blackMove();                         //User playing black moves, checkmate scan
+            if(isCheckmateWhite() == true){
+                    printPosition();
+                    System.out.println("Checkmate. 0 - 1");
+                    return;
+                }
+            //Stalemate check
 
-            //Checkmate/stalemate check
+        } while(true);
+    }
 
-            printPosition();
-            do{
+    public static void whiteMove(){ //For user playing white,
+        printPosition();            //Position is printed
+        boolean legal = true;
+        do{
+            System.out.println("White to play.");   //Prompt user for move with "move" method until move is input which does not leave white in check
+            legal = true;
+            move("white");
+
+            if(isCheckWhite()){
+                legal = false;
+                rewind(fromSquare, toSquare);   //If white's still in check, the move was illegal, so rewind the move, prompt again
+
+                System.out.println("Oops! You hung your king. Please try again.");
+            }
+        } while(legal == false);
+            
+    }
+
+    public static void blackMove(){ //Identical to whiteMove with colors reversed
+        printPosition();
+        boolean legal = true;
+        do{
             System.out.println("Black to play.");
             legal = true;
             move("black");
@@ -92,41 +154,33 @@ public class Chess {                                //Need to add castling, pawn
 
                 System.out.println("Oops! You hung your king. Please try again.");
             }
-            } while(legal == false);
-            if(isCheckmateWhite() == true){
-                printPosition();
-                System.out.println("Checkmate. 0 - 1");
-                return;
-            }
-
-            //Checkmate/stalemate check
-        } while(true);      //Not checkmate or stalemate?
+        } while(legal == false);
     }
 
-    public static void move(String color){
+    public static void move(String color){          //Method for prompting a user move
         Scanner input = new Scanner(System.in);
 
-        movingPiece[0] = null;
-        fromSquare = currentPosition(color);
+        movingPiece[0] = null;                      //Reset moving piece tracker
+        fromSquare = currentPosition(color);        //Run method getting input for the square being moved from
 
-        //System.out.println(Arrays.toString(movingPiece[0].getLegalMoves(squareArray)));
+        //System.out.println(Arrays.toString(movingPiece[0].getLegalMoves(squareArray))); (FOR DEBUGGING - display legal moves array for selected piece)
 
-        toSquare = intendedPosition(color, fromSquare);
+        toSquare = intendedPosition(color, fromSquare); //Method getting input for square being moved to
 
-        movingPiece[0].move(fromSquare, toSquare, squareArray, movingPiece, capturedPiece);
+        movingPiece[0].move(fromSquare, toSquare, squareArray, movingPiece, capturedPiece); //Moves piece from current position to intended position
     }
 
-    public static boolean isCheckWhite(){
-        for(Piece piece: blackPieces){
-            for(int move : piece.getCaptureMoves(squareArray)){
-                if(move == whiteKing.getPosition()){
-                    return true;
+    public static boolean isCheckWhite(){                       //Check scan for white
+        for(Piece piece: blackPieces){                          //For every black piece,
+            for(int move : piece.getCaptureMoves(squareArray)){ //For every legal move (actually every move, illegal moves have value -1, where captured pieces go, so the king can't be there),
+                if(move == whiteKing.getPosition()){            //If the legal move is the same as the white king's position,
+                    return true;                                //It's check
                 }
             }
         }
-        return false;
+        return false;                                           //Otherwise, no check
     }
-    public static boolean isCheckBlack(){
+    public static boolean isCheckBlack(){                       //Identical to isCheckwhite with reversed colors
         for(Piece piece: whitePieces){
             for(int move : piece.getCaptureMoves(squareArray)){
                 if(move == blackKing.getPosition()){
@@ -137,20 +191,20 @@ public class Chess {                                //Need to add castling, pawn
         return false;
     }
 
-    public static boolean isCheckmateWhite(){
-        if(isCheckWhite()){
-            for(Piece piece : whitePieces){
+    public static boolean isCheckmateWhite(){   //Scanning for whether white is checkmated
+        if(isCheckWhite()){                      //If white is in check,
+            for(Piece piece : whitePieces){      //For all white pieces,
                 fromSquare = piece.getPosition();
                 movingPiece[0] = piece;
 
-                for(int move : piece.getLegalMoves(squareArray)){
+                for(int move : piece.getLegalMoves(squareArray)){   //For every legal move,
                     if(!(move == -1)){
-                        piece.move(fromSquare, move, squareArray, movingPiece, capturedPiece);
+                        piece.move(fromSquare, move, squareArray, movingPiece, capturedPiece); //Play the mve
 
-                        if(isCheckWhite()){
+                        if(isCheckWhite()){             //If it's still check, rewind the move
                             rewind(fromSquare, move);
                         }
-                        else{
+                        else{                           //If white isn't in check anymore, rewind the move, return false because white has a move to get out of check
                             rewind(fromSquare, move);
                             return false;
                         }
@@ -158,18 +212,17 @@ public class Chess {                                //Need to add castling, pawn
                 }
             }
         }
-        else{
+        else{   //If white isn't in check it isn't checkmate
             return false;
         }
-        return true;
+        return true;    //If none of white's moves get out of check, it's checkmate
     }
 
-    public static boolean isCheckmateBlack(){
+    public static boolean isCheckmateBlack(){   //Identical to isCheckmateWhite with reversed colors
         if(isCheckBlack()){
             for(Piece piece : blackPieces){
                 fromSquare = piece.getPosition();
                 movingPiece[0] = piece;
-                //System.out.println(movingPiece[0]);
 
                 for(int move : piece.getLegalMoves(squareArray)){
                     if(!(move == -1)){
@@ -192,32 +245,30 @@ public class Chess {                                //Need to add castling, pawn
     return true;
     }
 
-    public static void rewind(int fromSquare, int move){
-        movingPiece[0].place(fromSquare);
-        squareArray[fromSquare].setOccupant(movingPiece[0]);
+    public static void rewind(int fromSquare, int move){    //Method for rewinding previous move (used for user inputs which leave them in check, checkmate checks)
+        movingPiece[0].place(fromSquare);                   //Place the piece last moved on the square it came from
+        squareArray[fromSquare].setOccupant(movingPiece[0]); //Set that square's occupant to the moving piece
 
-        if(!(capturedPiece[0] == null)){
-            capturedPiece[0].place(move);
-            squareArray[move].setOccupant(capturedPiece[0]);
+        if(!(capturedPiece[0] == null)){    //If a piece was captured,
+            capturedPiece[0].place(move);   //Place it on the square that was moved to
+            squareArray[move].setOccupant(capturedPiece[0]);    //Set that square's occupant to the formerly captured piece
         }
         else{
-            squareArray[move].setOccupant(null);
+            squareArray[move].setOccupant(null);    //If there wasn't a piece captured, set the square that was moved to's occupant to null
         }
     }
         
-    public static void printPosition(){
-        for(int multiplier = 8; multiplier > 0; multiplier --){
-            for(int i = (multiplier - 1)*8; i < multiplier*8; i++){
-                Square square = squareArray[i];
+    public static void printPosition(){ //Method for printing position to terminal
+        for(int multiplier = 8; multiplier > 0; multiplier --){ //Starting with multiplier 8, decrementing
+            for(int i = (multiplier - 1)*8; i < multiplier*8; i++){ //Increment through 8 times (this goes from 56-63, then 48-55, and so on, so that the back ranks are printed first)
+                Square square = squareArray[i];                 //Print square's position code
                 System.out.print(square.getUnicode());
-                //System.out.printf("%4d", square.getUnicode());
-                //System.out.print("piece");
             }
             System.out.println();
         }
     }
 
-    public static int currentPosition(String color){
+    public static int currentPosition(String color){    //Getting user input for moving piece's position
         Scanner input = new Scanner(System.in);
         String fromSquareString;
         boolean validInput;
@@ -229,44 +280,44 @@ public class Chess {                                //Need to add castling, pawn
             fromSquareString = input.nextLine();
             //int rankInt = (int)fromSquareString.charAt(1) - 48;
 
-            
+            //Checking to see whether the input is an actual square on the board
             if(fromSquareString.equals(null) || !(fromSquareString.length() == 2) || fileToInt(fromSquareString.charAt(0)) == 0 || (int)fromSquareString.charAt(1) - 48 < 1 || (int)fromSquareString.charAt(1) - 48 > 8){
                 validInput = false;
                 System.out.println("Incorrect notation. Please try again.");
             }
-            else{
-                int fileValue = fileToInt(fromSquareString.charAt(0)) - 1;
+            else{ //If it is, check whether the selected piece has any legal moves
+                int fileValue = fileToInt(fromSquareString.charAt(0)) - 1; //File adds 0 to position for a-file, 1 for b-file, etc.
 
                 int rankCharConvert = (int)fromSquareString.charAt(1) - 48; //-48 to line up unicode number with integer
-                int rankValue = (rankCharConvert - 1) * 8;
+                int rankValue = (rankCharConvert - 1) * 8; //Rank adds 0 for 1st rank, 8 for 2nd, 16 for 3rd, etc.
                         
-                fromSquare1 = fileValue + rankValue;
+                fromSquare1 = fileValue + rankValue;    //Selected square is sum of file and rank
 
                 validInput = false;
                 if(color.equals("white")){
-                    for(Piece piece : whitePieces){
+                    for(Piece piece : whitePieces){ //For every white piece
                         int piecePosition = piece.getPosition();
-                        if(piecePosition == fromSquare1){
+                        if(piecePosition == fromSquare1){   //If the position's the same as the input,
                             int[] legalMoves = piece.legalMoves(squareArray);
 
-                            for(int move : legalMoves){
-                                if(move >= 0 && move < 64){        //Ensure legalMovesArray uses "-1" as empty?
-                                    validInput = true;
+                            for(int move : legalMoves){ //If any of the moves are legal and on the board,
+                                if(move >= 0 && move < 64){
+                                    validInput = true;  //Set boolean to true
                                     break;
                                 }
                             }
-                            movingPiece[0] = piece;
+                            movingPiece[0] = piece; //Set moving piece to selected piece
                         }
                     }
                 }
-                else{
+                else{   //Same process for black pieces
                     for(Piece piece : blackPieces){
                         int piecePosition = piece.getPosition();
                         if(piecePosition == fromSquare1){
                             int[] legalMoves = piece.legalMoves(squareArray);
 
                             for(int move : legalMoves){
-                                if(move >= 0 && move < 64){        //Ensure legalMovesArray uses "-1" as empty?
+                                if(move >= 0 && move < 64){ 
                                     validInput = true;
                                     break;
                                 }
@@ -275,7 +326,7 @@ public class Chess {                                //Need to add castling, pawn
                         }
                     }
                 }
-                if(validInput == false){
+                if(validInput == false){    //If the input isn't valid, no pieces matched the input and had legal moves. Prompt again.
                     System.out.println("No legal moves from that square. Please try again.");
                 }
             }
@@ -283,7 +334,7 @@ public class Chess {                                //Need to add castling, pawn
         return fromSquare1;
     }
 
-    public static int intendedPosition(String color, int fromSquare){
+    public static int intendedPosition(String color, int fromSquare){ //Getting user input for intended position of moving piece
         Scanner input = new Scanner(System.in);
         //String toSquareString;
         boolean validInput;
@@ -297,13 +348,13 @@ public class Chess {                                //Need to add castling, pawn
             //System.out.println(rankInt);
             //System.out.println(toSquareString);
 
-
+            //Checking whether input square is actually a square
             if(toSquareString.equals(null) || !(toSquareString.length() == 2) || (fileToInt(toSquareString.charAt(0)) == 0 || (int)toSquareString.charAt(1) - 48 < 1 || (int)toSquareString.charAt(1) - 48 > 8)){
                 validInput = false;
                 System.out.println("Incorrect notation. Please try again.");
             }
             else{
-                int fileValue = fileToInt(toSquareString.charAt(0)) - 1;
+                int fileValue = fileToInt(toSquareString.charAt(0)) - 1;    //Same process as in currentPosition to determine square int from input like "a1" or "d7"
 
                 int rankCharConvert = (int)toSquareString.charAt(1) - 48; //-48 to line up unicode number with integer
                 int rankValue = (rankCharConvert - 1) * 8;
@@ -311,14 +362,14 @@ public class Chess {                                //Need to add castling, pawn
                 toSquare1 = fileValue + rankValue;
 
 
-                for(int legalMove : movingPiece[0].getLegalMoves(squareArray)){
+                for(int legalMove : movingPiece[0].getLegalMoves(squareArray)){     //If input square is one of the legal moves of the moving piece, valid input is true
                     if(legalMove == toSquare1){
                         validInput = true;
                         break;
                         }
                 }
 
-                if (!validInput){
+                if (!validInput){   //Otherwise, it isn't legal, prompt another move
                     System.out.println("That is not a legal move. Please try again.");
                 }
             }
@@ -327,8 +378,7 @@ public class Chess {                                //Need to add castling, pawn
         return toSquare1;
     }
 
-
-    public static int fileToInt(char file){
+    public static int fileToInt(char file){ //Converting file letters to int
         switch(file){
             case 'a': return 1;
             case 'b': return 2;
@@ -342,7 +392,7 @@ public class Chess {                                //Need to add castling, pawn
         return 0;
     }
 
-    public static Piece[] place(){
+    public static Piece[] place(){  //Creates the 32 piece objects, puts them into appropriate arrays
         Piece whitePawnA = new Piece("pawn", "white", 8, " P ");  Piece blackPawnA = new Piece("pawn", "black", 48, " P*");
         Piece whitePawnB = new Piece("pawn", "white", 9, " P ");  Piece blackPawnB = new Piece("pawn", "black", 49, " P*");
         Piece whitePawnC = new Piece("pawn", "white", 10, " P "); Piece blackPawnC = new Piece("pawn", "black", 50, " P*");
@@ -376,26 +426,24 @@ public class Chess {                                //Need to add castling, pawn
         }
 
         return pieceArray;
-
-        
     }
 
-    public static Square[] createBoard(){
+    public static Square[] createBoard(){       //Initializing 64 square objects
         Square[] squareArray = new Square[64];
 
-        for(int i = 0; i < 16; i++){
+        for(int i = 0; i < 16; i++){            //First 16 squares are occupied by white pieces
             Square square = new Square(i, whitePieces[i]);
             squareArray[i] = square;
         }
-        for(int i = 16; i < 48; i++){
+        for(int i = 16; i < 48; i++){           //Next 32 are open
             Square square = new Square(i, null);
             squareArray[i] = square;
         }
-        for(int i = 48; i < 64; i++){
+        for(int i = 48; i < 64; i++){           //Last 16 are occupied by black pieces
             Square square = new Square(i, blackPieces[i - 48]);
             squareArray[i] = square;
         }
-        return squareArray;
+        return squareArray;                     //Returns array of all squares
     }
 
 }
