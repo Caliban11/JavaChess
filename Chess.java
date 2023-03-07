@@ -1,3 +1,9 @@
+/*The game is little hard to get started. It might help the user if you put an explanation of how to move the pieces in a short text above the game 
+ * so the player always knows how to play. 
+ * Also when I choose to play as black, the knight on white's side disappears. 
+ * The opposing's team's pawn has a tendency to jump across the board and take my knight.
+ * I also get an error whenever I try to take a piece.
+ */
 import java.util.Scanner;
 import java.util.Random;
 import java.util.Arrays;
