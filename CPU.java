@@ -1,4 +1,6 @@
 import java.util.Random;
+import java.util.Arrays;
+
 public class CPU {
     private Piece[] pieces;
     private String color;
@@ -19,7 +21,7 @@ public class CPU {
         
         for(Piece piece : this.pieces){
             cpuPieceValue = pieceValue(piece) - 1;
-
+            j = 0;
             for(int move : piece.getLegalMoves(squareArray)){
                 if(move == -1){
                     captureValue = -89;
@@ -30,17 +32,34 @@ public class CPU {
                 else{
                     captureValue = cpuPieceValue;
                 }
-                captureValues[i] = captureValue;
+                captureValues[j] = captureValue - cpuPieceValue;
                 j++;
             }
             bestMoveEvals[i] = max(captureValues);
             bestMoves[i] = maxIndex(captureValues);
             i++;
         }
-        Piece selectedPiece = this.pieces[maxIndex(bestMoveEvals)];
-        movingPiece[0] = selectedPiece;
+        Piece selectedPiece;
+        if(max(bestMoveEvals) > 0){
+            selectedPiece = this.pieces[maxIndex(bestMoveEvals)];
+            movingPiece[0] = selectedPiece;
+        }
+        else{
+            Random rand = new Random();
+            int randInt;
+            do{
+                randInt = rand.nextInt(16);
 
-        int selectedMove = bestMoves[maxIndex(bestMoveEvals)];
+            }while(bestMoveEvals[randInt] < - 20);
+            selectedPiece = this.pieces[randInt];
+            movingPiece[0] = selectedPiece;
+        }
+
+        int selectedMove = selectedPiece.getLegalMoves(squareArray)[bestMoves[maxIndex(bestMoveEvals)]];
+
+        System.out.println(Arrays.toString(bestMoveEvals));
+        System.out.println(Arrays.toString(bestMoves));
+        //System.out.println();
 
         selectedPiece.move(selectedPiece.getPosition(), selectedMove, squareArray, movingPiece, capturedPiece);
 

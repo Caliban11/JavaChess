@@ -2,7 +2,7 @@ import java.util.Scanner;
 import java.util.Random;
 import java.util.Arrays;
 
-public class Chess {                                //Need to add castling, pawn promotion, en passant, draws/stalemate, computer opponent, taking chess notation
+public class Chess {                                //Need to add castling, pawn promotion, en passant, draws/stalemate
     public static int fromSquare = -1;              //Variables to track square being moved from, to
     public static int toSquare = -1;
 
