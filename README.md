@@ -20,7 +20,7 @@ For both inputs, use the board notation shown below:
 3  
 2  
 1  
- a  b  c  d  e  f  g  h
+ a     b     c     d     e     f     g     h
 
 The board is from the perspective of the white pieces; when playing the black pieces, your pieces will still be displayed at the top.  
 
